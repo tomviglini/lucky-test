@@ -1,0 +1,25 @@
+version: '3.9'
+services:
+  db:
+    image: mysql:5.6
+    restart: always
+    env_file: ./.env
+    ports:
+      - '3306:3306'
+    volumes:
+      - ./mysql-data:/var/lib/mysql
+  web:
+    build: .
+    restart: on-failure
+    env_file: ./.env
+    ports:
+      - '3000:3000'
+    volumes:
+      - ./src:/usr/src/app/src
+      - ./nodule_modules:/usr/src/app/nodule_modules
+      - ./package.json:/usr/src/app/package.json
+      - ./package-lock.json:/usr/src/app/package-lock.json
+    depends_on:
+      - db
+volumes:
+  mysql-data:
