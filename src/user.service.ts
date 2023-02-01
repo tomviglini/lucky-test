@@ -43,9 +43,35 @@ export class UserService {
       });
   }
 
-  async createUser(user): Promise<void> {
-    // Improvemment: Validations and cleanup output
+  async createUser(user): Promise<any> {
+    // Improvemment: Validations, better errors and cleanup output
+    // dont like using this [0].id just using because can't use query builder/orm
+
     const password = await hash(user.password, 10);
-    return await this.dataSource.query('INSERT INTO user (username, password) VALUES (?, ?)', [user.username, password]);
+    let userId;
+
+    try {
+
+      await this.dataSource.query('START TRANSACTION');
+
+      await this.dataSource.query('INSERT INTO user (username, password) VALUES (?, ?)', [user.username, password]);
+      userId = await this.dataSource.query('SELECT LAST_INSERT_ID() id');
+
+      await this.dataSource.query('INSERT INTO address (city_id, street) VALUES (?, ?)', [user.address.city_id, user.address.street]);
+      const addressId = await this.dataSource.query('SELECT LAST_INSERT_ID() id');
+
+      await this.dataSource.query('INSERT INTO profile (user_id, address_id, name) VALUES (?, ?, ?)', [userId[0].id, addressId[0].id, user.name]);
+
+      await this.dataSource.query('COMMIT');
+
+    } catch(e) {
+      console.log(e);
+      await this.dataSource.query('ROLLBACK');
+      return {
+        msg: 'failed creating user'
+      };
+    }
+
+    return this.getUser(userId[0].id);
   }
 }
