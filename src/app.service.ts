@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { compare } from 'bcrypt';
-import { sign, decode, verify } from 'jsonwebtoken';
+import { sign } from 'jsonwebtoken';
 
 @Injectable()
 export class AppService {
@@ -13,21 +13,21 @@ export class AppService {
     );
 
     if (!user.length) {
-      return Promise.resolve(false);
+      return false;
     }
 
     const passwordMatch = await compare(payload.password, user[0].password);
 
     if (!passwordMatch) {
-      return Promise.resolve(false);
+      return false;
     }
 
     const jwt = sign(
       {
         exp: Math.floor(Date.now() / 1000) + 60 * 60,
         data: {
-          id: user.id,
-          username: user.username,
+          id: user[0].id,
+          username: user[0].username,
         },
       },
       user[0].password,

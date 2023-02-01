@@ -1,12 +1,29 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { genSalt, hash } from 'bcrypt';
+import { hash } from 'bcrypt';
 
 @Injectable()
 export class UserService {
   constructor(private readonly dataSource: DataSource) {}
 
   async getUser(userId): Promise<any> {
+    const user = await this.dataSource.query(`
+      SELECT 
+        *
+      FROM
+        user
+      WHERE
+        user.id = ${userId}`);
+
+      if (!user.length) {
+        return false;
+      }
+
+      return user[0];
+  }
+
+  async getUserInfo(userId): Promise<any> {
+    // improv: exceptions/error messages
     // This could be a lot better just using ORM/query builder
     const user = await this.dataSource.query(`
       SELECT 
@@ -29,10 +46,10 @@ export class UserService {
         user.id = ${userId}`);
 
       if (!user.length) {
-        return Promise.resolve(false);
+        return false;
       }
 
-      return Promise.resolve({
+      return {
         id: user[0].id,
         name: user[0].name,
         address: {
@@ -40,7 +57,7 @@ export class UserService {
           city: user[0].city,
           country: user[0].country
         }
-      });
+      };
   }
 
   async createUser(user): Promise<any> {
