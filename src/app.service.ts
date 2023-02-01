@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { compare } from 'bcrypt';
+import { sign, decode, verify } from 'jsonwebtoken';
 
 @Injectable()
 export class AppService {
@@ -8,8 +9,12 @@ export class AppService {
 
   async createToken(payload): Promise<any> {
     const user = await this.dataSource.query(
-      `SELECT * FROM users WHERE users.username = "${payload.username}"`,
+      `SELECT * FROM user WHERE user.username = "${payload.username}"`,
     );
+
+    if (!user.length) {
+      return Promise.resolve(false);
+    }
 
     const passwordMatch = await compare(payload.password, user[0].password);
 
@@ -17,6 +22,17 @@ export class AppService {
       return Promise.resolve(false);
     }
 
-    return true;
+    const jwt = sign(
+      {
+        exp: Math.floor(Date.now() / 1000) + 60 * 60,
+        data: {
+          id: user.id,
+          username: user.username,
+        },
+      },
+      user[0].password,
+    );
+
+    return jwt;
   }
 }

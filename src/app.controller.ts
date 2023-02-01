@@ -6,7 +6,10 @@ export class AppController {
   constructor(private readonly appService: AppService) {}
 
   @Post('auth')
-  async createToken(@Body() payload): Promise<void> {
-    return await this.appService.createToken(payload);
+  async createToken(@Body() payload): Promise<any> {
+    // Improvemment: cleanup output error
+    return {
+      token: await this.appService.createToken(payload),
+    };
   }
 }
